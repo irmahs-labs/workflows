@@ -6,7 +6,7 @@
 #     app:
 #       uses: irmahs-labs/workflows/.github/workflows/app-ci.yml@main
 #       with:
-#         typecheck: npm run lint   # only what differs from the defaults
+#         build: ""   # only what differs from the defaults
 #
 # and adds its own jobs for anything else (a database, a smoke test, browser
 # tests), plus the final `checks` job the branch rules require. Set a command

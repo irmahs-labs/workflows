@@ -1,0 +1,45 @@
+# CodeQL code scanning: GitHub's security analysis of a repo's TypeScript and
+# of its GitHub Actions workflows. Findings show in the repo's Security tab and
+# on pull requests. A repo calls it from its own .github/workflows/codeql.yml:
+#
+#   jobs:
+#     codeql:
+#       uses: irmahs-labs/workflows/.github/workflows/codeql.yml@main
+#       permissions:
+#         actions: read
+#         contents: read
+#         security-events: write
+#
+# Code scanning is free on public repos only, so a private repo on the free
+# plan leaves that file out.
+name: CodeQL
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: JSON list of CodeQL languages to analyse
+        type: string
+        default: '["actions", "javascript-typescript"]'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(inputs.languages) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}

@@ -11,7 +11,7 @@ jobs:
   app:
     uses: irmahs-labs/workflows/.github/workflows/app-ci.yml@main
     with:
-      typecheck: npm run lint
+      node-version: "22"
 
   smoke:                     # anything only this app needs
     ...
@@ -39,3 +39,36 @@ jobs:
 Set a command to `""` to skip its job, for example `build: ""` when the app's own job builds and smoke-tests it.
 
 Every repo uses `@main`, so a change here reaches all of them on their next run. Check it on one repo's pull request (point its `uses:` at your branch) before merging it here.
+
+## CodeQL
+
+`.github/workflows/codeql.yml` runs [CodeQL](https://codeql.github.com/) code scanning: GitHub's security analysis of the repo's TypeScript and its GitHub Actions workflows. Findings show in the repo's **Security** tab and on pull requests. A repo calls it from its own `.github/workflows/codeql.yml`, on each pull request, each push to `main` and once a week:
+
+```yaml
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * 1"
+
+jobs:
+  codeql:
+    uses: irmahs-labs/workflows/.github/workflows/codeql.yml@main
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+```
+
+| Input | Default | |
+|---|---|---|
+| `languages` | `["actions", "javascript-typescript"]` | JSON list; `["actions"]` for a repo with no TypeScript |
+
+Code scanning is free on public repos only: a private repo on the free plan leaves this file out.
+
+## Dependabot
+
+Each repo has a `.github/dependabot.yml` (the template's is the model): npm packages and GitHub Actions, checked once a month. Minor and patch updates come grouped in one pull request per ecosystem; a major version comes on its own, since it can break things. Docker images are left out on purpose: their tags are major versions (`node:24-alpine`, `postgres:17-alpine`), which pick up fixes on every rebuild, and a major image upgrade (above all Postgres) is a deliberate change.

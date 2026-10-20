@@ -28,7 +28,7 @@ actionlint   # https://github.com/rhysd/actionlint; the checks job runs it on ev
 
 ## What this is
 
-The CI workflows every irmahs-labs repo calls, starting with `.github/workflows/app-ci.yml` (Lint and format, Type-check, Tests, Build, Docker build). `README.md` lists its inputs and shows how a repo calls it.
+The CI workflows every irmahs-labs repo calls: `.github/workflows/app-ci.yml` (Lint and format, Type-check, Tests, Build, Docker build) and `.github/workflows/codeql.yml` (code scanning). `README.md` lists their inputs and shows how a repo calls them.
 
 - Every repo calls it at `@main`, so a merge here changes every repo's next CI run at once. Before merging a change, point one repo's `uses:` at the branch in a draft pull request there and see it pass.
 - Adding an input with a default is safe. Renaming or removing an input, or renaming a job, breaks or renames the checks in every repo that uses it: update their `ci.yml` in the same round.

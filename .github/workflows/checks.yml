@@ -1,0 +1,21 @@
+# This repo's own check: every workflow here is valid, before any app's CI
+# depends on it. Named "checks", like every irmahs-labs repo, so the same
+# branch rules (irmahs-labs/template's ruleset.json) protect it.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color

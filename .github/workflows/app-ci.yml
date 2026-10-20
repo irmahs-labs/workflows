@@ -1,0 +1,113 @@
+# The checks every irmahs-labs app runs on each pull request, one job per
+# check so a pull request lists each with its own result. A repo calls it from
+# its own .github/workflows/ci.yml:
+#
+#   jobs:
+#     app:
+#       uses: irmahs-labs/workflows/.github/workflows/app-ci.yml@main
+#       with:
+#         typecheck: npm run lint   # only what differs from the defaults
+#
+# and adds its own jobs for anything else (a database, a smoke test, browser
+# tests), plus the final `checks` job the branch rules require. Set a command
+# to "" to skip that job. Every job installs with `npm ci`.
+name: App CI
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version
+        type: string
+        default: "24"
+      lint:
+        description: Lint and format command
+        type: string
+        default: npm run check
+      typecheck:
+        description: Type-check command
+        type: string
+        default: npm run typecheck
+      test:
+        description: Unit test command
+        type: string
+        default: npm test
+      build:
+        description: Build command
+        type: string
+        default: npm run build
+      compose-check:
+        description: Command that validates the compose file(s)
+        type: string
+        default: docker compose config --quiet
+      docker-image:
+        description: Tag for `docker build`; "" skips the Docker build job
+        type: string
+        default: app
+
+jobs:
+  lint:
+    name: Lint and format
+    if: inputs.lint != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: ${{ inputs.lint }}
+
+  typecheck:
+    name: Type-check
+    if: inputs.typecheck != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: ${{ inputs.typecheck }}
+
+  test:
+    name: Tests
+    if: inputs.test != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: ${{ inputs.test }}
+
+  build:
+    name: Build
+    if: inputs.build != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: ${{ inputs.build }}
+
+  docker:
+    name: Docker build
+    if: inputs.docker-image != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate compose
+        if: inputs.compose-check != ''
+        run: ${{ inputs.compose-check }}
+      - name: Docker build
+        run: docker build -t "$IMAGE" .
+        env:
+          IMAGE: ${{ inputs.docker-image }}

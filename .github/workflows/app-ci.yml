@@ -8,9 +8,10 @@
 #       with:
 #         build: ""   # only what differs from the defaults
 #
-# and adds its own jobs for anything else (a database, a smoke test, browser
-# tests), plus the final `checks` job the branch rules require. Set a command
-# to "" to skip that job. Every job installs with `npm ci`.
+# and adds its own jobs for anything else (a database, browser tests), plus
+# the final `checks` job the branch rules require. A smoke test of the built
+# app goes in `smoke`, so it runs in the Build job right after the build. Set a
+# command to "" to skip that job. Every job installs with `npm ci`.
 name: App CI
 
 on:
@@ -36,6 +37,10 @@ on:
         description: Build command
         type: string
         default: npm run build
+      smoke:
+        description: Smoke test of the built app, run in the Build job after the build; "" skips it
+        type: string
+        default: ""
       compose-check:
         description: Command that validates the compose file(s)
         type: string
@@ -97,6 +102,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: ${{ inputs.build }}
+      - name: Smoke test
+        if: inputs.smoke != ''
+        run: ${{ inputs.smoke }}
 
   docker:
     name: Docker build

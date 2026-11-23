@@ -13,13 +13,13 @@ jobs:
     with:
       node-version: "22"
 
-  smoke:                     # anything only this app needs
+  e2e:                       # anything only this app needs
     ...
 
   checks:                    # required by the branch rules
     name: checks
     if: always()
-    needs: [app, smoke]
+    needs: [app, e2e]
     runs-on: ubuntu-24.04
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
@@ -33,10 +33,19 @@ jobs:
 | `typecheck` | `npm run typecheck` | |
 | `test` | `npm test` | |
 | `build` | `npm run build` | |
+| `smoke` | `""` | smoke test of the built app, run in the Build job after the build |
 | `compose-check` | `docker compose config --quiet` | runs before the Docker build |
 | `docker-image` | `app` | tag for `docker build` |
 
-Set a command to `""` to skip its job, for example `build: ""` when the app's own job builds and smoke-tests it.
+Set a command to `""` to skip its job. To start the built app and check it answers, pass the commands as `smoke` rather than skipping `build` for a job of your own, so the check is still called **Build** like everywhere else:
+
+```yaml
+    with:
+      smoke: |
+        node .next/standalone/server.js &
+        for _ in $(seq 30); do curl -s localhost:3000 >/dev/null && break; sleep 0.5; done
+        test "$(curl -s -o /dev/null -w '%{http_code}' localhost:3000/)" = 200
+```
 
 Every repo uses `@main`, so a change here reaches all of them on their next run. Check it on one repo's pull request (point its `uses:` at your branch) before merging it here.
 
